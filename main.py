@@ -1,3 +1,27 @@
+"""
+Usage:
+  main.py [--numFeatures=<k>] [--numClasses=<nc>] [--learningRate=<lr>] [--batchSize=<bs>] [--numWorkers=<nw>] [--shuffleTrain=<st>] [--shuffleValid=<sv>] [--epochs=<e>] [--schedule=<sch>] [--debug=<db>] [--accuracyAverage=<aavg>] [--patience=<p>] [--absentScore=<as>] [--tbLogs=<tbl>]
+  main.py -h | --help
+Options:
+  --numFeatures=<k>       Number of features [default: 3]
+  --numClasses=<nc>       Number of segmentation classes [default: 50]
+  --learningRate=<lr>     Learning Rate [default: 1e-3] 
+  --batchSize=<bs>        Batch Size[default: 32]
+  --numWorkers=<nw>       Number of workers [default: 2]
+  --shuffleTrain=<st>      Shuffle Train [default: False]
+  --shuffleValid=<sv>      Shuffle Validation [default: False]
+  --epochs=<e>            Number of epochs [default: 10]
+  --schedule=<sch>        Schedule [default: False]
+  --debug=<db>            Debug [default: True]
+  --accuracyAverage=<aavg> Accuracy Average [default: 'micro']
+  --patience=<p>          Patience [default: 5]
+  --absentScore=<as>      Absent Score [default: 1]
+  --tbLogs=<tbl>          Dir to save tensorboard logs [default: './tensorboard/']
+  
+"""
+from docopt import docopt
+from distutils.util import strtobool
+
 import torch
 import numpy as np
 import datetime
@@ -127,6 +151,30 @@ def train_all_epochs(train_loader, valid_loader, our_model, optimizer, scheduler
 
 
 if __name__ == '__main__':
+    
+    # read arguments
+    args = docopt(__doc__)
+    """
+    hparams = {
+    'k': int(args['--numFeatures']),
+    'num_classes': int(args['--numClasses']),
+    'lr': float(args['--learningRate']),
+    'bs': int(args['--batchSize']),
+    'num_workers': int(args['--numWorkers']),
+    'shuffle_train': strtobool(args['--shuffleTrain']),
+    'shuffle_valid': strtobool(args['--shuffleValid']),
+    'epochs': int(args['--epochs']),
+    'schedule': strtobool(args['--schedule']),
+    'debug': strtobool(args['--debug']),
+    'device': torch.device('cuda:0' if torch.cuda.is_available() else 'cpu'),
+    'acc_avg': args['--accuracyAverage'],
+    'patience': int(args['--patience']),
+    'absent_score': int(args['--absentScore']),
+    'tb_logs': args['--tbLogs'],
+    'tb_name': 'tb_' + str(datetime.datetime.utcnow())
+    }
+    """
+    
     train_dataloader = dataset.get_dataloader(path='data/shapenet', split="train", bs=hparams['bs'],
                                               shuffle=hparams['shuffle_train'], num_workers=hparams['num_workers'])
     valid_dataloader = dataset.get_dataloader(path='data/shapenet', split="val", bs=hparams['bs'],
@@ -152,4 +200,4 @@ if __name__ == '__main__':
     train_all_epochs(train_dataloader, valid_dataloader, our_model, optimizer, scheduler, criterion, accuracy, iou,
                      writer_train, writer_val)
 
-
+    
