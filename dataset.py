@@ -3,7 +3,7 @@ from torch_geometric.data import DataLoader
 
 
 def get_dataset(path, split):
-    return ShapeNet(root=path, split=split)
+    return ShapeNet(root=path, split=split, include_normals=False)
 
 
 def get_dataloader(path, split, bs, shuffle, num_workers):
