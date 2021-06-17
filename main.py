@@ -5,13 +5,13 @@ import os
 import tensorflow
 import tensorboard
 import dataset
-import model
+
 
 from torch import nn
 from torch.utils.tensorboard import SummaryWriter
 from torchmetrics import Accuracy, IoU
 from utils import my_print, write_metric_tb
-
+from model import PointNetModel
 
 hparams = {
     'k': 3,
@@ -126,8 +126,8 @@ if __name__ == '__main__':
     valid_dataloader = dataset.get_dataloader(path='data/shapenet', split="val", bs=hparams['bs'],
                                               shuffle=hparams['shuffle_valid'], num_workers=hparams['num_workers'])
     # Features
-    our_model = model(k=hparams['k'], num_classes=hparams['num_classes'])
-    optimizer = torch.optim.Adam(our_model.parameters(), lr=hparams['lr']).to(hparams['device'])
+    our_model = PointNetModel(k=hparams['k'], num_classes=hparams['num_classes'])
+    optimizer = torch.optim.Adam(our_model.parameters(), lr=hparams['lr'])
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=hparams['patience'])
     criterion = nn.CrossEntropyLoss().to(hparams['device'])
 
@@ -139,7 +139,7 @@ if __name__ == '__main__':
 
     # TensorBoard
     tensorflow.io.gfile = tensorboard.compat.tensorflow_stub.io.gfile
-    writer = SummaryWriter(log_dir=os.path.join(hparams['tb_logs'], hparams['tb_name']))
+    writer = SummaryWriter(log_dir=os.path.join(hparams['tb_logs']))
 
     # Begin Train
     train_all_epochs(train_dataloader, valid_dataloader, our_model, optimizer, scheduler, criterion, accuracy, iou,
