@@ -5,7 +5,7 @@ Usage:
 Options:
   --numFeatures=<k>       Number of features [default: 3]
   --numClasses=<nc>       Number of segmentation classes [default: 50]
-  --learningRate=<lr>     Learning Rate [default: 1e-3] 
+  --learningRate=<lr>     Learning Rate [default: 1e-3]
   --batchSize=<bs>        Batch Size[default: 32]
   --numWorkers=<nw>       Number of workers [default: 2]
   --shuffleTrain=<st>      Shuffle Train [default: False]
@@ -17,141 +17,123 @@ Options:
   --patience=<p>          Patience [default: 5]
   --absentScore=<as>      Absent Score [default: 1]
   --tbLogs=<tbl>          Dir to save tensorboard logs [default: './tensorboard/']
-  
-"""
-from docopt import docopt
-from distutils.util import strtobool
 
-import torch
-import numpy as np
-import datetime
+"""
 import os
+import datetime
+import numpy as np
+
 import tensorflow
 import tensorboard
-import dataset
 
+import torch
 from torch import nn
 from torch.utils.tensorboard import SummaryWriter
-from torchmetrics import Accuracy, IoU
-from utils import my_print, write_metric_tb
-from model import PointNetModel
+
+from torch_geometric.data import DataLoader
+
+from torchmetrics import Accuracy
+
+
+
+from docopt import docopt
+
+from dataset import get_train_valid_test_ModelNet, get_data_augmentation
+from Models.PointNet import PointNetModel
+from Models.GCN import GCN
+from utils import my_print
+
 
 hparams = {
     'k': 3,
-    'num_classes': 50,
+    'num_classes': 10,
     'lr': 1e-3,
     'bs': 32,
     'num_workers': 2,
-    'shuffle_train': False,
-    'shuffle_valid': False,
-    'epochs': 10,
+    'epochs': 100,
     'schedule': False,
     'debug': True,
     'device': torch.device('cuda:0' if torch.cuda.is_available() else 'cpu'),
-    'acc_avg': 'micro',
-    'patience': 5,
-    'absent_score': 1,
     'tb_logs': './tensorboard/',
-    'tb_name': 'tb_' + str(datetime.datetime.utcnow())
+    'tb_name': 'tb_' + str(datetime.datetime.utcnow()),
+    'model': 'pointNet',
+    'level': 3,
+    'dropout': True,
+    'data_augmentation': 'flip_rotate',
+    'wd': 1e-3,
+    'max_lr': 100,
+    'gamma': 0.5,
+    'patience': 10,
+    'scheduler': 'CyclicLR',
+    'step_size': 20
 }
 
 
-def train_epoch(our_model, train_loader, optimizer, criterion, accuracy, iou):
-    # List for epoch loss:
-    epoch_train_loss = []
-    # Model in train mode:
-    our_model.train()
-    # Metrics stored information reset:
-    accuracy.reset()
-    iou.reset()
-    # Batch loop for training:
-    for i, data in enumerate(train_loader, 0):
-        # Data retrieval from each bath:
-        points = data.pos.unsqueeze(2).to(hparams['device'])
-        targets = data.y.to(hparams['device'])
-        # Forward pass:
-        preds, probs = our_model(points)
-        # Loss calculation + Backpropagation pass
-        optimizer.zero_grad()
-        loss = criterion(preds.squeeze(-1), targets)
-        epoch_train_loss.append(loss.item())  # save loss to later represent
-        loss.backward()
-        optimizer.step()
-        # Batch metrics calculation:
-        accuracy.update(probs.squeeze(), targets)
-        iou.update(probs.squeeze(), targets)
-    # Mean epoch metrics calculation:
-    mean_loss = np.mean(epoch_train_loss)
-    mean_acc = accuracy.compute().item()
-    mean_iou = iou.compute()
-    mean_iou = iou.compute().item()
-    # Print of all metrics:
-    my_print('Train loss: ' + str(mean_loss) + "| Acc.: " + str(mean_acc) + "| IoU: " + str(mean_iou), hparams['debug'])
-    return mean_loss, mean_acc, mean_iou
+def get_model(model_name, k=3, num_classes=10, dropout=True, level=3):
+    if model_name.lower() == 'pointNet'.lower():
+        return PointNetModel(k, num_classes, dropout)
+    elif model_name.upper() == 'GCN':
+        return GCN(k, num_classes, level, dropout)
+    else:
+        raise ValueError('Model is not correctly introduced')
 
 
-def valid_epoch(our_model, valid_loader, scheduler, criterion, accuracy, iou):
-    # List for epoch loss:
-    epoch_valid_loss = []
-    # Model in validation (evaluation) mode:
-    our_model.eval()
-    # Metrics stored information reset:
-    accuracy.reset()
-    iou.reset()
-    # Batch loop for validation:
-    with torch.no_grad():
-        for i, data in enumerate(valid_loader, 0):
-            # Data retrieval from each bath:
-            points = data.pos.unsqueeze(2).to(hparams['device'])
-            targets = data.y.to(hparams['device'])
-            # Forward pass:
-            preds, probs = our_model(points)
-            # Loss calculation + Backpropagation pass
-            loss = criterion(preds.squeeze(-1), targets)
-            epoch_valid_loss.append(loss.item())
-            # Batch metrics calculation:
-            accuracy.update(probs.squeeze(), targets)
-            iou.update(probs.squeeze(), targets)
-    # Mean epoch metrics calculation:
-    mean_loss = np.mean(epoch_valid_loss)
-    mean_acc = accuracy.compute().item()
-    mean_iou = iou.compute().item()
-    # Learning rate adjustment with scheduler:
-    if hparams['schedule']:
-        scheduler.step(mean_loss)
-    # Print of all metrics:
-    my_print('Valid loss: ' + str(mean_loss) + "| Acc.: " + str(mean_acc) + "| IoU: " + str(mean_iou), hparams['debug'])
-    return mean_loss, mean_acc, mean_iou
+def get_scheduler(scheduler_name, optimizer, lr=1e-3, max_lr=1e2, gamma=0.5, patience=10, step_size=20):
+    if scheduler_name.lower() == 'StepLR'.lower():
+        return torch.optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma), None
+    elif scheduler_name.lower() == 'ReduceLROnPlateau'.lower():
+        return torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=gamma, patience=patience), None
+    elif scheduler_name.lower() == 'CyclicLR'.lower():
+        return torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr=lr, max_lr=max_lr, cycle_momentum=False), \
+               torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr=lr, max_lr=max_lr, cycle_momentum=False)
+    else:
+        my_print('No scheduler', hparams['debug'])
+        return None, None
 
 
-def train_all_epochs(train_loader, valid_loader, our_model, optimizer, scheduler, criterion, accuracy, iou,
-                     writer_train, writer_val):
-    for epoch in range(hparams['epochs']):
-        my_print("Epoch: " + str(epoch), hparams['debug'])
-        # Training epoch:
-        epoch_train_loss, epoch_train_macc, epoch_train_miou = train_epoch(our_model, train_loader, optimizer,
-                                                                           criterion, accuracy, iou)
-        # Validation epoch:
-        epoch_valid_loss, epoch_valid_macc, epoch_valid_miou = valid_epoch(our_model, valid_loader, scheduler,
-                                                                           criterion, accuracy, iou)
+def get_tensorflow_writer(root):
+    tensorflow.io.gfile = tensorboard.compat.tensorflow_stub.io.gfile  # avoid tensorboard crash when adding embeddings
+    train_log_dir = os.path.join(root, datetime.datetime.now().strftime("%Y%m%d-%H%M%S"), 'train')
+    valid_log_dir = os.path.join(root, datetime.datetime.now().strftime("%Y%m%d-%H%M%S"), 'valid')
+    train_writer = SummaryWriter(log_dir=train_log_dir)
+    valid_writer = SummaryWriter(log_dir=valid_log_dir)
+    return train_writer, valid_writer
 
-        metrics_train = {
-            'epoch_train_loss': epoch_train_loss,
-            'epoch_train_macc': epoch_train_macc,
-            'epoch_train_miou': epoch_train_miou
-        }
-        write_metric_tb(writer_train, metrics_train, epoch)
 
-        metrics_val = {
-            'epoch_valid_loss': epoch_valid_loss,
-            'epoch_valid_macc': epoch_valid_macc,
-            'epoch_valid_miou': epoch_valid_miou
-        }
-        write_metric_tb(writer_val, metrics_val, epoch)
+def fit(train_data, valid_data, num_classes, k=3, bs=32, num_epochs=100, lr=1e-3, wd=1e-3, num_workers=2):
+    # Data Loaders for train and validation:
+    train_loader = DataLoader(train_data, batch_size=bs, shuffle=True)
+    valid_loader = DataLoader(valid_data, batch_size=bs, shuffle=False)
+
+    # Obtain correct model
+    model = get_model(hparams['model'], k, num_classes, hparams['dropout'], hparams['level']).to(hparams['device'])
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=wd)
+
+    # Obtain correct scheduler
+    scheduler, train_scheduler, fit_scheduler = get_scheduler(hparams['scheduler'], optimizer, lr, hparams['max_lr'], hparams['gamma'],
+                              hparams['patience'], hparams['step_size'])
+    criterion = nn.CrossEntropyLoss().to(hparams['device'])
+
+    # Metric
+    accuracy = Accuracy(average='micro', compute_on_step=False).to(hparams['device'])
+
+    # Tensorboard set up
+    train_writer, valid_writer = get_tensorflow_writer(hparams['tb_logs'])
+
+    # Minimum accuracy to save the model
+    best_accuracy = 0.0
+    my_print('Start training...', hparams['debug'])
+    for epoch in range(1, num_epochs + 1):
+        my_print('Epoch: ' + str(epoch), hparams['debug'])
+        # Train and validation
+        train_loss, train_accu = train_epoch(model, train_loader, optimizer, criterion, accuracy, hparams['device'],
+                                             train_scheduler)
+        valid_loss, valid_accu = valid_epoch(model, valid_loader, criterion, accuracy, hparams['device'])
+
 
 
 if __name__ == '__main__':
-    
     # read arguments
     args = docopt(__doc__)
     """
@@ -174,30 +156,20 @@ if __name__ == '__main__':
     'tb_name': 'tb_' + str(datetime.datetime.utcnow())
     }
     """
-    
-    train_dataloader = dataset.get_dataloader(path='data/shapenet', split="train", bs=hparams['bs'],
-                                              shuffle=hparams['shuffle_train'], num_workers=hparams['num_workers'])
-    valid_dataloader = dataset.get_dataloader(path='data/shapenet', split="val", bs=hparams['bs'],
-                                              shuffle=hparams['shuffle_valid'], num_workers=hparams['num_workers'])
-    # Features
-    our_model = PointNetModel(k=hparams['k'], num_classes=hparams['num_classes'])
-    optimizer = torch.optim.Adam(our_model.parameters(), lr=hparams['lr'])
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=hparams['patience'])
-    criterion = nn.CrossEntropyLoss().to(hparams['device'])
 
-    # Metrics
-    accuracy = Accuracy(num_classes=hparams['num_classes'], average=hparams['acc_avg'], compute_on_step=False). \
-        to(hparams['device'])
-    iou = IoU(num_classes=hparams['num_classes'], absent_score=hparams['absent_score'], compute_on_step=False). \
-        to(hparams['device'])
+    train_dataset, valid_dataset, test_dataset = get_train_valid_test_ModelNet('/data')
+    get_data_augmentation(train_dataset, hparams['data_augmentation'])
 
-    # TensorBoard
-    tensorflow.io.gfile = tensorboard.compat.tensorflow_stub.io.gfile
-    writer_train = SummaryWriter(log_dir=os.path.join(hparams['tb_logs']))
-    writer_val = SummaryWriter(log_dir=os.path.join(hparams['tb_logs']))
+    seed = 42
+    # Controlling sources of randomness
+    torch.manual_seed(seed)  # generate random numbers for all devices (both CPU and CUDA)
+    # Random number generators in other libraries:
+    np.random.seed(seed)
+    # CUDA convolution benchmarking: ensures that CUDA selects the same algorithm each time an application is run
+    torch.backends.cudnn.benchmark = False
 
-    # Begin Train
-    train_all_epochs(train_dataloader, valid_dataloader, our_model, optimizer, scheduler, criterion, accuracy, iou,
-                     writer_train, writer_val)
 
-    
+
+    best_acc, state_dict_root = fit(train_dataset, valid_dataset, hparams['num_classes'], hparams['k'], hparams['bs'],
+                                    hparams['epochs'], hparams['lr'], hparams['wd'], hparams['num_workers'])
+
