@@ -38,28 +38,27 @@ from Models.GCN import GCN
 from utils import my_print, get_tensorflow_writer, write_epoch_data, update_best_model
 
 hparams = {
-    'k': 3,
-    'num_classes': 10,
-    'lr': 1e-3,
     'bs': 32,
     'epochs': 100,
-    'schedule': False,
     'debug': True,
     'device': torch.device('cuda:0' if torch.cuda.is_available() else 'cpu'),
     'tb_logs': './tensorboard/',
     'tb_name': 'tb_' + str(datetime.datetime.utcnow()),
+    'data_augmentation': 'flip_rotate',
     'model': 'pointNet',
     'model_log': '/models/',
+    'k': 3,
+    'num_classes': 10,
     'level': 3,
     'dropout': True,
-    'data_augmentation': 'flip_rotate',
+    'optimizer': 'Adam',
+    'lr': 1e-3,
     'wd': 1e-3,
+    'momentum': 0.9,
+    'scheduler': 'OneCycleLR',
     'gamma': 0.5,
     'patience': 10,
-    'scheduler': 'OneCycleLR',
-    'step_size': 20,
-    'optimizer': 'Adam',
-    'momentum': 0.9
+    'step_size': 20
 }
 
 
@@ -247,22 +246,24 @@ if __name__ == '__main__':
     args = docopt(__doc__)
     """
     hparams = {
+    'bs': int(args['--batchSize']),
+    'epochs': int(args['--epochs']),
+    'debug': strtobool(args['--debug']),
+    'tb_name': 'tb_' + str(datetime.datetime.utcnow()),
+    'data_augmentation': args['--dataAugmentation'],
+    'model': args['--model'],
     'k': int(args['--numFeatures']),
     'num_classes': int(args['--numClasses']),
+    'level': int(args['--level']),
+    'dropout': strtobool(args['--debug']),
+    'optimizer': args['--optimizer'],
     'lr': float(args['--learningRate']),
-    'bs': int(args['--batchSize']),
-    'num_workers': int(args['--numWorkers']),
-    'shuffle_train': strtobool(args['--shuffleTrain']),
-    'shuffle_valid': strtobool(args['--shuffleValid']),
-    'epochs': int(args['--epochs']),
-    'schedule': strtobool(args['--schedule']),
-    'debug': strtobool(args['--debug']),
-    'device': torch.device('cuda:0' if torch.cuda.is_available() else 'cpu'),
-    'acc_avg': args['--accuracyAverage'],
-    'patience': int(args['--patience']),
-    'absent_score': int(args['--absentScore']),
-    'tb_logs': args['--tbLogs'],
-    'tb_name': 'tb_' + str(datetime.datetime.utcnow())
+    'wd': float(args['--weightDecay']),
+    'momentum': float(args['--momentum']),
+    'scheduler': args['--schedule'],
+    'gamma': float(args['gamma']),
+    'patience': float(args['--patience']),
+    'step_size': int(args['--stepSize'])
     }
     """
 

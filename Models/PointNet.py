@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from torch.nn import funtional as F
+from torch.nn import functional as F
 
 
 class TNet(nn.Module):
