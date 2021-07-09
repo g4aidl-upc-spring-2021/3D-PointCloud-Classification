@@ -1,3 +1,4 @@
+# TODO: Add new usages options
 """
 Usage:
   main.py [--numFeatures=<k>] [--numClasses=<nc>] [--learningRate=<lr>] [--batchSize=<bs>] [--numWorkers=<nw>] [--shuffleTrain=<st>] [--shuffleValid=<sv>] [--epochs=<e>] [--schedule=<sch>] [--debug=<db>] [--accuracyAverage=<aavg>] [--patience=<p>] [--absentScore=<as>] [--tbLogs=<tbl>]
