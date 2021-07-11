@@ -78,7 +78,7 @@ class Transform(nn.Module):
 
 
 class PointNetModel(nn.Module):
-    def __init__(self, k=3, num_classes=16, dropout=True):
+    def __init__(self, k=3, num_classes=16, dropout=0.3):
         super().__init__()
         self.transform = Transform(k)
 
@@ -87,7 +87,7 @@ class PointNetModel(nn.Module):
         self.FC2 = nn.Linear(in_features=512, out_features=256)
         self.bn2 = nn.BatchNorm1d(256)
         self.FC3 = nn.Linear(in_features=256, out_features=num_classes)
-        self.dropout = nn.Dropout(p=0.3) if dropout else None
+        self.dropout = nn.Dropout(p=dropout) if dropout is not None else None
 
     def forward(self, x):
         global_features = self.transform(x)

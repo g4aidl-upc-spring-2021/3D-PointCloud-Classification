@@ -1,10 +1,10 @@
 from torch import nn
-from torch.nn import funtional as F
+from torch.nn import functional as F
 from torch_geometric.nn import GCNConv, global_max_pool
 
 
 class GCN(nn.Module):
-    def __init__(self, k=3, num_classes=10, level=3, dropout=True):
+    def __init__(self, k=3, num_classes=10, level=3, dropout=0.3):
         super().__init__()
         self.k = k
         self.level = level
@@ -20,7 +20,7 @@ class GCN(nn.Module):
         self.bn2 = nn.BatchNorm1d(32)
         self.bn3 = nn.BatchNorm1d(64)
 
-        self.dropout = nn.Dropout(p=0.3) if dropout else None
+        self.dropout = nn.Dropout(p=dropout) if dropout is not None else None
 
     def forward(self, x, edge_index, batch):
         # 1. Obtain node embeddings

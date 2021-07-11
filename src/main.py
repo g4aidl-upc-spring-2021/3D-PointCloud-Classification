@@ -1,26 +1,33 @@
-# TODO: Add new usages options
 """
 Usage:
-  main.py [--numFeatures=<k>] [--numClasses=<nc>] [--learningRate=<lr>] [--batchSize=<bs>] [--numWorkers=<nw>] [--shuffleTrain=<st>] [--shuffleValid=<sv>] [--epochs=<e>] [--schedule=<sch>] [--debug=<db>] [--accuracyAverage=<aavg>] [--patience=<p>] [--absentScore=<as>] [--tbLogs=<tbl>]
+  main.py [--batchSize=<bs>] [--debug=<db>] [--epochs=<e>] [--dataAugmentation=<da>] [--flipProbability=<fp>]
+  [--flipAxis=<fa>] [--rotateDegrees=<rd>] [--rotateAxis=<ra>] [--model=<mod>] [--numFeatures=<k>] [--numClasses=<nc>]
+  [--level=<lev>]  [--dropout=<do>] [--optimizer=<opt>] [--learningRate=<lr>] [--weightDecay=<wd>] [--momentum=<mom>]
+  [--schedule=<sch>] [--gamma=<gam>] [--patience=<p>] [--stepSize=<ss>]
+
   main.py -h | --help
 Options:
     --batchSize=<bs>        Batch Size[default: 32]
     --debug=<db>            Debug [default: True]
     --epochs=<e>            Number of epochs [default: 100]
-    --dataAugmentation
+    --dataAugmentation=<da> Type of data augmentation applied [default: flip_rotation]
+    --flipProbability=<fp>  Probability that node positions will be flipped. [default: 0.5]
+    --flipAxis=<fa>         The axis along the position of nodes being flipped. [default: 1]
+    --rotateDegrees=<rd>    Rotation interval from which the rotation angle is sampled. [default: 45]
+    --rotateAxis=<ra>       The rotation axis. [default: 1]
+    --model=<mod>           Model that is going to be used [default: PointNet]
+    --numFeatures=<k>       Number of features [default: 3]
     --numClasses=<nc>       Number of segmentation classes [default: 50]
-  --learningRate=<lr>     Learning Rate [default: 1e-3]
-  --numFeatures=<k>       Number of features [default: 3]
-  --numWorkers=<nw>       Number of workers [default: 2]
-  --shuffleTrain=<st>      Shuffle Train [default: False]
-  --shuffleValid=<sv>      Shuffle Validation [default: False]
-
-  --schedule=<sch>        Schedule [default: False]
-
-  --accuracyAverage=<aavg> Accuracy Average [default: 'micro']
-  --patience=<p>          Patience [default: 5]
-  --absentScore=<as>      Absent Score [default: 1]
-  --tbLogs=<tbl>          Dir to save tensorboard logs [default: './tensorboard/']
+    --level=<lev>           Number of layers of GCN [default: 3]
+    --dropout=<do>          Dropout probability if used [default: 0.3]
+    --optimizer=<opt>       Optimizer that is going to be used [default: Adam]
+    --learningRate=<lr>     Learning Rate [default: 1e-3]
+    --weightDecay=<wd>      Weight Decay for Adam [default: 1e-3]
+    --momentum=<mom>        Momentum for SGD [default: 0.9]
+    --schedule=<sch>        Schedule [default: False]
+    --gamma=<gam>           Multiplicative factor of learning rate decay. [default:0.5]
+    --patience=<p>          Number of epochs with no improvement after which learning rate will be reduced. [default: 5]
+    --stepSize=<ss>         Period of learning rate decay. [default: 20]
 
 """
 import datetime
@@ -49,12 +56,16 @@ hparams = {
     'tb_logs': './tensorboard/',
     'tb_name': 'tb_' + str(datetime.datetime.utcnow()),
     'data_augmentation': 'flip_rotate',
+    'flip_probability': 0.5,
+    'flip_axis': 1,
+    'rotate_degrees': 45,
+    'rotate_axis': 1,
     'model': 'pointNet',
-    'model_log': '/models/',
+    'model_log': './saved_models/',
     'k': 3,
     'num_classes': 10,
     'level': 3,
-    'dropout': True,
+    'dropout': 0.3,
     'optimizer': 'Adam',
     'lr': 1e-3,
     'wd': 1e-3,
@@ -66,7 +77,11 @@ hparams = {
 }
 
 
-def get_model(model_name, k=3, num_classes=10, dropout=True, level=3):
+def check_if_graph(model_name):
+    return model_name.upper() == 'GCN'
+
+
+def get_model(model_name, k=3, num_classes=10, dropout=0.3, level=3):
     if model_name.lower() == 'pointNet'.lower():
         return PointNetModel(k, num_classes, dropout)
     elif model_name.upper() == 'GCN':
@@ -100,8 +115,15 @@ def get_optimizer(optimizer_name, model_parameters, lr, wd, momentum):
         raise ValueError('Optimizer is not correctly introduced')
 
 
+def get_points(points, dense_batch, device):
+    if dense_batch:
+        return to_dense_batch(points.pos, batch=points.batch)[0].to(device).float().transpose(1, 2)
+    else:
+        return points.pos.to(device)
+
+
 # Train One Epoch:
-def train_epoch(model, train_loader, optimizer, criterion, accuracy, device, scheduler):
+def train_epoch(model, train_loader, optimizer, criterion, accuracy, device, scheduler, dense_batch):
     # Model in train mode:
     model.train()
     # List for epoch loss:
@@ -112,7 +134,7 @@ def train_epoch(model, train_loader, optimizer, criterion, accuracy, device, sch
     # Train epoch loop:
     for i, data in enumerate(train_loader, 1):
         # Data retrieval from each bath:
-        points = to_dense_batch(data.pos, batch=data.batch)[0].to(device).float().transpose(1, 2)
+        points = get_points(data, dense_batch, device)
         targets = data.y.to(device)
 
         # Forward pass:
@@ -140,7 +162,7 @@ def train_epoch(model, train_loader, optimizer, criterion, accuracy, device, sch
 
 
 # Valid One Epoch:
-def valid_epoch(model, valid_loader, criterion, accuracy, device):
+def valid_epoch(model, valid_loader, criterion, accuracy, device, dense_batch):
     # Model in validation (evaluation) mode:
     model.eval()
     # List for epoch loss:
@@ -151,7 +173,7 @@ def valid_epoch(model, valid_loader, criterion, accuracy, device):
     with torch.no_grad():
         for i, data in enumerate(valid_loader, 1):
             # Data retrieval from each bath:
-            points = to_dense_batch(data.pos, batch=data.batch)[0].to(device).float().transpose(1, 2)
+            points = get_points(data, dense_batch, device)
             targets = data.y.to(device)
 
             # Forward pass:
@@ -165,11 +187,11 @@ def valid_epoch(model, valid_loader, criterion, accuracy, device):
     mean_loss = np.mean(epoch_valid_loss)
     mean_accu = accuracy.compute().item()
     # Print of all metrics:
-    print('Valid loss: ', mean_loss, "| Acc.: ", mean_accu)
+    my_print('Valid loss: ' + str(mean_loss) + "| Acc.: " + str(mean_accu), hparams['debug'])
     return mean_loss, mean_accu
 
 
-def fit(train_data, valid_data, num_classes, k=3, bs=32, num_epochs=100, lr=1e-3):
+def fit(train_data, valid_data, num_classes, k=3, bs=32, num_epochs=100, lr=1e-3, dense_batch=False):
     # Data Loaders for train and validation:
     train_loader = DataLoader(train_data, batch_size=bs, shuffle=True)
     valid_loader = DataLoader(valid_data, batch_size=bs, shuffle=False)
@@ -199,8 +221,8 @@ def fit(train_data, valid_data, num_classes, k=3, bs=32, num_epochs=100, lr=1e-3
         my_print('Epoch: ' + str(epoch), hparams['debug'])
         # Train and validation
         train_loss, train_accu = train_epoch(model, train_loader, optimizer, criterion, accuracy, hparams['device'],
-                                             train_scheduler)
-        valid_loss, valid_accu = valid_epoch(model, valid_loader, criterion, accuracy, hparams['device'])
+                                             train_scheduler, dense_batch)
+        valid_loss, valid_accu = valid_epoch(model, valid_loader, criterion, accuracy, hparams['device'], dense_batch)
 
         if fit_scheduler is not None:
             scheduler.step(valid_loss) if fit_scheduler else scheduler.step()
@@ -209,7 +231,7 @@ def fit(train_data, valid_data, num_classes, k=3, bs=32, num_epochs=100, lr=1e-3
 
         # Save best model:
         if best_accuracy < valid_accu:
-            best_accuracy, model_root = update_best_model(valid_accu, model.state_dict())
+            best_accuracy, model_root = update_best_model(valid_accu, model.state_dict(), hparams['model_log'])
 
     final_state_dict_root = model_root + '.pt'
     model.load_state_dict(torch.load(final_state_dict_root))
@@ -217,9 +239,9 @@ def fit(train_data, valid_data, num_classes, k=3, bs=32, num_epochs=100, lr=1e-3
     return best_accuracy, final_state_dict_root
 
 
-def test(test_data, model_state_dict_root):
+def test(test_data, model_state_dict_root, dense_batch):
     test_loader = DataLoader(test_data, batch_size=1, shuffle=False)
-    model = PointNetModel(k=3, num_classes=10).to(hparams['device'])
+    model = get_model(hparams['model'], hparams['k'], hparams['num_classes'], hparams['dropout'], hparams['level'])
 
     accuracy = Accuracy(average='micro', compute_on_step=False).to(hparams['device'])
     model.load_state_dict(torch.load(model_state_dict_root))
@@ -230,9 +252,9 @@ def test(test_data, model_state_dict_root):
     with torch.no_grad():
         for i, data in enumerate(test_loader, 1):
             # Data retrieval from each bath:
-            points = to_dense_batch(data.pos, batch=data.batch)[0].to(hparams['device']).float().transpose(1, 2)
-
+            points = get_points(data, dense_batch, hparams['device'])
             targets = data.y.to(hparams['device'])
+
             # Forward pass:
             preds, probs = model(points)
 
@@ -241,7 +263,7 @@ def test(test_data, model_state_dict_root):
 
     mean_accu = accuracy.compute().item()
     # Print of all metrics:
-    print("Acc.: ", mean_accu)
+    my_print("Acc.: " + str(mean_accu), hparams['debug'])
     return mean_accu
 
 
@@ -255,24 +277,29 @@ if __name__ == '__main__':
     'debug': strtobool(args['--debug']),
     'tb_name': 'tb_' + str(datetime.datetime.utcnow()),
     'data_augmentation': args['--dataAugmentation'],
+    'flip_probability': float(args['--flipProbability]),
+    'flip_axis': int(args['--flipAxis']),
+    'rotate_degrees': float(args['--flipDegrees']),
+    'rotate_axis': int(args['--rotateAxis']),
     'model': args['--model'],
     'k': int(args['--numFeatures']),
     'num_classes': int(args['--numClasses']),
     'level': int(args['--level']),
-    'dropout': strtobool(args['--debug']),
+    'dropout': strtobool(args['--dropout']),
     'optimizer': args['--optimizer'],
     'lr': float(args['--learningRate']),
     'wd': float(args['--weightDecay']),
     'momentum': float(args['--momentum']),
     'scheduler': args['--schedule'],
-    'gamma': float(args['gamma']),
+    'gamma': float(args['--gamma']),
     'patience': float(args['--patience']),
     'step_size': int(args['--stepSize'])
     }
     """
-
-    train_dataset, valid_dataset, test_dataset = get_train_valid_test_ModelNet('/data')
-    get_data_augmentation(train_dataset, hparams['data_augmentation'])
+    model_is_graph = check_if_graph(hparams['model'])
+    train_dataset, valid_dataset, test_dataset = get_train_valid_test_ModelNet('/data', model_is_graph)
+    get_data_augmentation(train_dataset, hparams['data_augmentation'], hparams['flip_axis'],
+                          hparams['flip_probability'], hparams['rotate_axis'], hparams['flip_axis'])
 
     seed = 42
     # Controlling sources of randomness
@@ -283,6 +310,6 @@ if __name__ == '__main__':
     torch.backends.cudnn.benchmark = False
 
     best_acc, state_dict_root = fit(train_dataset, valid_dataset, hparams['num_classes'], hparams['k'], hparams['bs'],
-                                    hparams['epochs'], hparams['lr'])
+                                    hparams['epochs'], hparams['lr'], not model_is_graph)
 
-    test_inference = test(test_dataset, state_dict_root)
+    test_inference = test(test_dataset, state_dict_root, not model_is_graph)
