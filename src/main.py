@@ -4,16 +4,19 @@ Usage:
   main.py [--numFeatures=<k>] [--numClasses=<nc>] [--learningRate=<lr>] [--batchSize=<bs>] [--numWorkers=<nw>] [--shuffleTrain=<st>] [--shuffleValid=<sv>] [--epochs=<e>] [--schedule=<sch>] [--debug=<db>] [--accuracyAverage=<aavg>] [--patience=<p>] [--absentScore=<as>] [--tbLogs=<tbl>]
   main.py -h | --help
 Options:
-  --numFeatures=<k>       Number of features [default: 3]
-  --numClasses=<nc>       Number of segmentation classes [default: 50]
+    --batchSize=<bs>        Batch Size[default: 32]
+    --debug=<db>            Debug [default: True]
+    --epochs=<e>            Number of epochs [default: 100]
+    --dataAugmentation
+    --numClasses=<nc>       Number of segmentation classes [default: 50]
   --learningRate=<lr>     Learning Rate [default: 1e-3]
-  --batchSize=<bs>        Batch Size[default: 32]
+  --numFeatures=<k>       Number of features [default: 3]
   --numWorkers=<nw>       Number of workers [default: 2]
   --shuffleTrain=<st>      Shuffle Train [default: False]
   --shuffleValid=<sv>      Shuffle Validation [default: False]
-  --epochs=<e>            Number of epochs [default: 10]
+
   --schedule=<sch>        Schedule [default: False]
-  --debug=<db>            Debug [default: True]
+
   --accuracyAverage=<aavg> Accuracy Average [default: 'micro']
   --patience=<p>          Patience [default: 5]
   --absentScore=<as>      Absent Score [default: 1]

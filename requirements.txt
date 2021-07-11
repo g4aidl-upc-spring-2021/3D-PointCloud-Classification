@@ -3,4 +3,5 @@ numpy~=1.19.5
 torchmetrics~=0.4.1
 docopt~=0.6.2
 tensorboard~=2.5.0
-tensorboard~=2.5.0
+tensorflow~=2.5.0
+plotly~=5.1.0
