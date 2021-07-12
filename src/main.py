@@ -52,6 +52,7 @@ from Models.GCN import GCN
 from utils import my_print, get_tensorboard_writer, write_epoch_data, update_best_model
 
 hparams = {
+    
     'bs': 32,
     'epochs': 100,
     'debug': True,
