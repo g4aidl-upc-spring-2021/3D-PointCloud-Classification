@@ -1,9 +1,10 @@
 """
 Usage:
-  main.py [--batchSize=<bs>] [--debug=<db>] [--epochs=<e>] [--dataAugmentation=<da>] [--flipProbability=<fp>]
-  [--flipAxis=<fa>] [--rotateDegrees=<rd>] [--rotateAxis=<ra>] [--model=<mod>] [--numFeatures=<k>] [--numClasses=<nc>]
-  [--level=<lev>]  [--dropout=<do>] [--optimizer=<opt>] [--learningRate=<lr>] [--weightDecay=<wd>] [--momentum=<mom>]
-  [--schedule=<sch>] [--gamma=<gam>] [--patience=<p>] [--stepSize=<ss>]
+  main.py [--batchSize=<bs>] [--debug=<db>] [--epochs=<e>] [--dataAugmentation=<da>] [--normalizeScale=<ns>]
+  [--numOfPoints=<np>] [--flipProbability=<fp>] [--flipAxis=<fa>] [--rotateDegrees=<rd>] [--rotateAxis=<ra>]
+  [--model=<mod>] [--numFeatures=<k>] [--numClasses=<nc>] [--level=<lev>]  [--dropout=<do>] [--optimizer=<opt>]
+  [--learningRate=<lr>] [--weightDecay=<wd>] [--momentum=<mom>] [--schedule=<sch>] [--gamma=<gam>] [--patience=<p>]
+  [--stepSize=<ss>]
 
   main.py -h | --help
 Options:
@@ -11,6 +12,8 @@ Options:
     --debug=<db>            Debug [default: True]
     --epochs=<e>            Number of epochs [default: 100]
     --dataAugmentation=<da> Type of data augmentation applied [default: flip_rotation]
+    --normalizeScale=<ns>   If centers and normalizes node positions or not [default: True]
+    --numOfPoints=<np>      The number of points to sample.
     --flipProbability=<fp>  Probability that node positions will be flipped. [default: 0.5]
     --flipAxis=<fa>         The axis along the position of nodes being flipped. [default: 1]
     --rotateDegrees=<rd>    Rotation interval from which the rotation angle is sampled. [default: 45]
@@ -46,7 +49,7 @@ from docopt import docopt
 from dataset import get_train_valid_test_ModelNet, get_data_augmentation
 from Models.PointNet import PointNetModel
 from Models.GCN import GCN
-from utils import my_print, get_tensorflow_writer, write_epoch_data, update_best_model
+from utils import my_print, get_tensorboard_writer, write_epoch_data, update_best_model
 
 hparams = {
     'bs': 32,
@@ -56,6 +59,8 @@ hparams = {
     'tb_logs': './tensorboard/',
     'tb_name': 'tb_' + str(datetime.datetime.utcnow()),
     'data_augmentation': 'flip_rotate',
+    'fixed_num_of_points': 1024,
+    'normalize_scale': True,
     'flip_probability': 0.5,
     'flip_axis': 1,
     'rotate_degrees': 45,
@@ -211,7 +216,7 @@ def fit(train_data, valid_data, num_classes, k=3, bs=32, num_epochs=100, lr=1e-3
     accuracy = Accuracy(average='micro', compute_on_step=False).to(hparams['device'])
 
     # Tensorboard set up
-    train_writer, valid_writer = get_tensorflow_writer(hparams['tb_logs'])
+    train_writer, valid_writer = get_tensorboard_writer(hparams['tb_logs'])
 
     # Minimum accuracy to save the model
     best_accuracy = 0.0
@@ -277,6 +282,8 @@ if __name__ == '__main__':
     'debug': strtobool(args['--debug']),
     'tb_name': 'tb_' + str(datetime.datetime.utcnow()),
     'data_augmentation': args['--dataAugmentation'],
+    'normalize_scale': strtobool(args['--normalizeScale']),
+    'fixed_num_of_points': int(args['--numOfPoints']),
     'flip_probability': float(args['--flipProbability]),
     'flip_axis': int(args['--flipAxis']),
     'rotate_degrees': float(args['--flipDegrees']),
@@ -297,9 +304,11 @@ if __name__ == '__main__':
     }
     """
     model_is_graph = check_if_graph(hparams['model'])
-    train_dataset, valid_dataset, test_dataset = get_train_valid_test_ModelNet('/data', model_is_graph)
-    get_data_augmentation(train_dataset, hparams['data_augmentation'], hparams['flip_axis'],
-                          hparams['flip_probability'], hparams['rotate_axis'], hparams['flip_axis'])
+    train_dataset, valid_dataset, test_dataset = get_train_valid_test_ModelNet(
+        '/data', hparams['fixed_num_of_points'], model_is_graph, hparams['normalize_scale'])
+
+    get_data_augmentation(train_dataset, hparams['data_augmentation'], hparams['normalize_scale'], hparams['flip_axis'],
+                          hparams['flip_probability'], hparams['rotate_axis'], hparams['rotate_degrees'])
 
     seed = 42
     # Controlling sources of randomness

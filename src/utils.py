@@ -13,7 +13,7 @@ def my_print(text, debug):
         print(text)
 
 
-def get_tensorflow_writer(root):
+def get_tensorboard_writer(root):
     tensorflow.io.gfile = tensorboard.compat.tensorflow_stub.io.gfile  # avoid tensorboard crash when adding embeddings
     train_log_dir = os.path.join(root, datetime.datetime.now().strftime("%Y%m%d-%H%M%S"), 'train')
     valid_log_dir = os.path.join(root, datetime.datetime.now().strftime("%Y%m%d-%H%M%S"), 'valid')
