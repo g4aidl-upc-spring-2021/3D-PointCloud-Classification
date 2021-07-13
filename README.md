@@ -1,5 +1,3 @@
-
-
 # AIDL Spring 2021: 3D Point Cloud Classification
 
 This repository contains two neural network architectures applied to point cloud classification. The first one follows the implementation proposed in the paper [_PointNet: Deep Learning on Point Sets for 3D Classification and Segmentation_](https://arxiv.org/pdf/1612.00593.pdf). The second one is defined with no reference and is based on Graph Convolutional Networks (GCN).
