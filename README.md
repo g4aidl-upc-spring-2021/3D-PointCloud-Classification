@@ -21,25 +21,15 @@ Advised by [Albert Mosella-Montoro](https://www.linkedin.com/in/albertmosellamon
 The distribution of the project files in this repository is as follows:
 
 	├── src          # Source files
-		
 		├── Models
-	
 			├── PointNet.py
-		
 			└──GCN.py
-		
 		├── main.py
-	
 		├── utils.py
-	
 		└── dataset.py
-	
 	├── collabs      # Collabs to execute the code and the experiments easily
-		
 	├── checkpoints  # Trained models
-		
-	├── .gitignore
-		
+	├── .gitignore	
 	└── README.md
 		
 ## Instructions to Run the Code
@@ -131,17 +121,11 @@ Some example of scenarios in which point clouds are used as the offspring realit
 ### 1.2. Objectives
 
 The main purpose of the project is to demonstrate the effectiveness of these two types of architectures in point cloud segmentation task. In order to address this, the scope can be split into the following sub-objectives:
-
 * Learn to work with 3D point clouds such as [ModelNet](https://modelnet.cs.princeton.edu/) dataset and use them in Deep Learning. This includes exploring, cleaning and preprocessing the data to make it suitable for each type of network architecture.
-
 * Reproduce a scientific publication’s network architecture such as [PointNet](https://arxiv.org/pdf/1612.00593.pdf) from scratch.
-
 * Develop and implement a classifier network architecture based on Graph Convolutional Networks. 
-
 * Train these two classifier models in order to recognise ten different classes of objects. This includes undertaking several tests in order to fine tune the models and obtain the best configuration of each of them.
-
 * Carry out an analysis of the results with suitable metrics such as mean accuracy and improve baseline network applying according steps depending on its performance and results.
-
 * Draw conclusions from all the tackled experiments and the different attempted improvements. Define further steps for the project based on its closure.
 
 <a name="corp"></a>
@@ -228,9 +212,7 @@ The number of channels is chosen as typical values for basic convolutional archi
 The designed and performed experiments are presented in this section in chronological order of execution. They are separated between PointNet and GCN experiments and details from each of them are explained as follows:
 
 * How is the network designed
-
 * The modifications made and thus the difference from the previous experiments
-
 * The results obtained and the conclusions for each one, justifying which experiments are concluded to be the best in terms of overall performance and evaluation metric
 
 <a name="metric"></a>
@@ -252,15 +234,12 @@ In the experiments using PointNet architecture the major goal is to improve the 
 All experiments share some common characteristics: 
 
 * ModelNet10 dataset is used.
-
 * Number of epochs during training is set to 100.
 
 As well as some hyper-parameters:
 
 * Batch size: 32
-
 * Learning rate: 1e-3
-
 * Number of workers: 2
 
 While some other features are changed throughout the experiments for the sake of finding the optimal configuration or the best performance of the models:
@@ -601,17 +580,11 @@ The second part of the project consists of replacing PointNet to GCN. The first 
 Labelled models follow the next notation:
 
 * GCN1_ / GCN2_ / GC3_ refers to the baseline model, graph convolutional network with 1, 2 or 3 layers respectively
-
 * D means applied Dropout
-
 * F means applied Flip transform
-
 * R means applied Rotation transform
-
 * FR means both Flip and Rotation transforms applied
-
 * S means scheduler. No subindex means LR Step. Sc refers to OneCycle scheduler
-
 * O means optimizer. No O means Adam optimizer by default. Os refers to SGD optimizer
 
 #### Experiment 1: GCN 1 layer
@@ -945,13 +918,9 @@ After analysing all experiments from PointNet and GCN, we will proceed to compar
 The highest accuracy from all the PointNet experiments is __0.96992__ and it corresponds to __experiment 10__, which has the following configuration:
 
 * Normalization
-
 * Adam optimizer with weight decay = 1e-3
-
 * Dropout of 0.3
-
 * Random Flip + Random Rotation
-
 * OneCycle Scheduler
 
 #### Best model from Graph Convolutional Network
@@ -959,13 +928,9 @@ The highest accuracy from all the PointNet experiments is __0.96992__ and it cor
 For GCN. we chose the experiments with validation accuracy of __0.9360__ which corresponds to __experiment 10__ and has the following configuration:
 
 * Normalization
-
 * Adam optimizer with weight decay = 1e-3
-
 * Dropout of 0.3
-
 * Random Flip
-
 * OneCycle Scheduler
 
 This is not the best model in terms of highest validation accuracy, but it is the one which has a better balance between this metric and overfitting reduction. The best model in terms of validation accuracy is experiment 5, with a value of 0.9487. We consider it is worth this difference of 0.01 in accuracy having this much improvement of overfitting reduction.
@@ -1013,14 +978,10 @@ We can see that PointNet network has much more capacity to learn abstract data r
 Through the implementation of these networks and the execution of all the experiments that are documented, we have been able to accomplish the objectives that we proposed and even some extra:
 
 * We have learnt to work with 3D point clouds but also with graphs. We have been able to process the data, use it in the networks and visualize it.
-
 * We have reproduced the PointNet architecture of a scientific publication from scratch. Although we firstly implemented it for segmentation task, we have been able to manage 
 the redesign also for classification.
-
 * Besides PointNet, we have developed and implemented a classifier network architecture based on Graph Convolutional Networks.
-
 * We have been able to train these two classifiers (PointNet and GCN) in order to recognise different classes of objects from ModelNet by executing a total of 33 experiments.
-
 * All the results from these experiments have been analysed using validation accuracy and have been improved depending on their performance and results. Drawing conclusions and improving the experiments has led us to find the best model.
 
 <a name="fwork"></a>
@@ -1029,19 +990,12 @@ the redesign also for classification.
 This project has been focused on reproducing the PointNet classifier from scratch and then implementing a GCN network also for classification purposes, but it could be extended in some different ways:
 
 * Instead of ModelNet10, use ModelNet40 which contains meshes for 40 types of different objects or other datasets of point clouds such as [ShapeNet](https://shapenet.org/).
-
 * Try different values for k in KNNGraph algorithm to generate graphs from point clouds.
-
 * Implement other metrics for evaluating the performance of the models, such as precision and recall, classification error or F1 score.
-
 * Try different transformations in data augmentation such as [Random Scale](https://pytorch-geometric.readthedocs.io/en/latest/modules/transforms.html#torch_geometric.transforms.RandomScale).
-
 * Try different values for the hyper parameters of the training process such as learning rate, batch size or number of workers.
-
 * Try different values for the parameters of the implemented optimizers and schedulers - for example, weight decay for Adam optimizer, momentum for SGD optimizer, multiplicative factor for schedulers, and so on.
-
 * Implementing a different architecture using graphs. This new network should be compared to GCN, and if obtaining better results we should compare it to the best PointNet model.
-
 * We could even extend the scope of the project by attempting a segmentation task instead of doing classification. We could restore the code and add it to the PointNet class, adapting the network to use another dataset.
 
 <a name="ref"></a>
