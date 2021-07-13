@@ -238,7 +238,7 @@ The designed and performed experiments are presented in this section in chronolo
 
 The main criterion to select the best model of each set of experiments is based on the best validation metric obtained in each training. In this case, and following the choice of referenced paper, __accuracy__ is chosen. It is very easy to implement from [TorchMetric library as a class](https://torchmetrics.readthedocs.io/en/latest/references/modules.html#accuracy), and it is defined as:
 
-$$accuracy = \frac{1}{N}\sum_{i}^{N}1\left(y_{i}=\hat{y}_{i}\right)$$
+![equation](https://latex.codecogs.com/gif.latex?accuracy&space;=&space;\frac{1}{N}\sum_{i}^{N}1\left(y_{i}=\hat{y}_{i}\right))
 
 Accuracy is computed at each epoch after data of predictions and targets are added to accuracy class at each iteration of the batch. After each epoch, metric class is rebooted.
 
