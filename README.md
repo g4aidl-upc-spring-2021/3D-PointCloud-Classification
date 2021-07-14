@@ -554,7 +554,7 @@ The same configuration as experiment 15 is used, but using OneCycle scheduler in
 
 **Results**
 
-![](https://github.com/g4aidl-upc-spring-2021/3D-PointCloud-Classification/blob/master/images/Exp15PointNet.png "Accuracy and Loss")
+![](https://github.com/g4aidl-upc-spring-2021/3D-PointCloud-Classification/blob/master/images/Exp16PointNet.png "Accuracy and Loss")
 
 ID  | Normalization | Dropout | Data Aug. | Optimizer | Scheduler | Best Val Accuracy 
 :-------------: | :-------------:  | :-------------: | :-------------: | :-------------: | :-------------: | :-------------:  
