@@ -989,15 +989,23 @@ This project has been focused on reproducing the PointNet classifier from scratc
 
 * Instead of ModelNet10, use ModelNet40 which contains meshes for 40 types of different objects or other datasets of point clouds such as [ShapeNet](https://shapenet.org/).
 * Equal number of elements of each class in the dataset in order to have a balance amount of objects.
-* Try different values for k in KNNGraph algorithm to generate graphs from point clouds.
+* Try different values for k in KNNGraph algorithm to generate graphs from point clouds and try to generate graph from radius.
 * Implement other metrics for evaluating the performance of the models, such as precision and recall, classification error or F1 score.
-* Try different transformations in data augmentation such as [Random Scale](https://pytorch-geometric.readthedocs.io/en/latest/modules/transforms.html#torch_geometric.transforms.RandomScale).
+* Try other regularization techniques, such as different transformations in data augmentation such as [Random Scale](https://pytorch-geometric.readthedocs.io/en/latest/modules/transforms.html#torch_geometric.transforms.RandomScale).
 * Try different values for the hyper parameters of the training process such as learning rate, batch size or number of workers.
 * Try different values for the parameters of the implemented optimizers and schedulers - for example, weight decay for Adam optimizer, momentum for SGD optimizer, multiplicative factor for schedulers, and so on.
-* Implementing a different architecture using graphs. This new network should be compared to GCN, and if obtaining better results we should compare it to the best PointNet model.
+* Implement deeper GCN network.
+* Implement new architecutres that use graphs, such as Graph Attention Networks (GAN's, do not confuse with Generative Adversarial Network).
 * We could even extend the scope of the project by attempting a segmentation task instead of doing classification. We could restore the code and add it to the PointNet class, adapting the network to use another dataset.
 
 <a name="ref"></a>
 ## 8. References
 
 All references regarding papers consulted and libraries used are directly linked to beforehand mentions.
+
+The main two papers from Neural Networks architecutres are:
+
+__PointNet: Deep Learning on Point Sets for 3D Classification and Segmentation | Charles R. Qi, Hao Su, Kaichun Mo, Leonidas J. Guibas__
+
+__Semi-Supervised Classification with Graph Convolutional Networks | Thomas N. Kipf, Max Welling__
+
