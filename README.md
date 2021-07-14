@@ -975,7 +975,7 @@ We can see that PointNet network has much more capacity to learn abstract data r
 
 Through the implementation of these networks and the execution of all the experiments that are documented, we have been able to accomplish the objectives that we proposed and even some extra:
 
-* We have learnt to work with 3D point clouds but also with graphs. We have been able to process the data, use it in the networks and visualize it.
+* We built graphs from point clouds and retrieved point clouds from meshes. We have been able to process the data, use it in the networks and visualize it.
 * We have reproduced the PointNet architecture of a scientific publication from scratch. Although we firstly implemented it for segmentation task, we have been able to manage 
 the redesign also for classification.
 * Besides PointNet, we have developed and implemented a classifier network architecture based on Graph Convolutional Networks.
