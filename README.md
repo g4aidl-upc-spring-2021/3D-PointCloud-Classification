@@ -992,7 +992,7 @@ This project has been focused on reproducing the PointNet classifier from scratc
 * Try different values for k in KNNGraph algorithm to generate graphs from point clouds and try to generate graph from radius.
 * Implement other metrics for evaluating the performance of the models, such as precision and recall, classification error or F1 score.
 * Try other regularization techniques, such as different transformations in data augmentation such as [Random Scale](https://pytorch-geometric.readthedocs.io/en/latest/modules/transforms.html#torch_geometric.transforms.RandomScale).
-* Try different values for the hyper parameters of the training process such as learning rate, batch size or number of workers.
+* Try different values for the hyper parameters of the training process such as learning rate or batch size..
 * Try different values for the parameters of the implemented optimizers and schedulers - for example, weight decay for Adam optimizer, momentum for SGD optimizer, multiplicative factor for schedulers, and so on.
 * Implement deeper GCN network.
 * Implement new architecutres that use graphs, such as Graph Attention Networks (GAN's, do not confuse with Generative Adversarial Network).
