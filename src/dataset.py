@@ -81,23 +81,26 @@ def get_random_rotation(degrees=45, axis=1):
     return RandomRotate(degrees, axis)
 
 
-def data_augmentation_flip(normalize_scale, axis=1, p=0.5):
-    return Compose([get_transformation(normalize_scale), get_random_flip(axis, p)])
+def data_augmentation_flip(normalize_scale, is_graph, axis=1, p=0.5):
+    return Compose([get_transformation(normalize_scale, is_graph), get_random_flip(axis, p)])
 
 
-def data_augmentation_rotation(normalize_scale, axis=1, degrees=45):
-    return Compose([get_transformation(normalize_scale), get_random_rotation(axis=axis, degrees=degrees)])
+def data_augmentation_rotation(normalize_scale, is_graph, axis=1, degrees=45):
+    return Compose([get_transformation(normalize_scale, is_graph), get_random_rotation(axis=axis, degrees=degrees)])
 
 
-def data_augmentation_flip_rotation(normalize_scale, axis_flip=1, p=0.5, axis_rotation=1, degrees=45):
-    return Compose([get_transformation(normalize_scale), get_random_flip(axis_flip, p),
+def data_augmentation_flip_rotation(normalize_scale, is_graph, axis_flip=1, p=0.5, axis_rotation=1, degrees=45):
+    return Compose([get_transformation(normalize_scale, is_graph), get_random_flip(axis_flip, p),
                     get_random_rotation(axis=axis_rotation, degrees=degrees)])
 
 
-def get_data_augmentation(dataset, transformation, normalize_scale, axis_flip=1, p=0.5, axis_rotation=1, degrees=45):
-    if transformation.lower() == 'flip_rotation':
-        dataset.transform = data_augmentation_flip_rotation(normalize_scale, axis_flip, p, axis_rotation, degrees)
-    elif transformation.lower() == 'flip':
-        dataset.transform = data_augmentation_flip(normalize_scale, axis=axis_flip, p=p)
-    elif transformation.lower() == 'rotate':
-        dataset.transform = data_augmentation_rotation(normalize_scale, axis=axis_rotation, degrees=degrees)
+def get_data_augmentation(dataset, transformation, is_graph,  normalize_scale, axis_flip=1, p=0.5, axis_rotation=1, degrees=45):
+    if transformation is not None:
+        if transformation.lower() == 'flip_rotation':
+            dataset.transform = data_augmentation_flip_rotation(normalize_scale, is_graph, axis_flip, p, axis_rotation, degrees)
+        elif transformation.lower() == 'flip':
+            dataset.transform = data_augmentation_flip(normalize_scale, is_graph, axis=axis_flip, p=p)
+        elif transformation.lower() == 'rotate':
+            dataset.transform = data_augmentation_rotation(normalize_scale, is_graph, axis=axis_rotation, degrees=degrees)
+        else:
+            raise ValueError("data augmentation bad introduced")

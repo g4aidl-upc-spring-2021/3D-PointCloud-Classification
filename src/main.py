@@ -98,15 +98,18 @@ def get_model(model_name, k=3, num_classes=10, dropout=0.3, level=3):
 
 def get_scheduler(scheduler_name, optimizer, lr=1e-3, gamma=0.5, patience=10, step_size=20, train_loader_len=1024,
                   num_epochs=100):
-    if scheduler_name.lower() == 'StepLR'.lower():
-        return torch.optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma), None, True
+    if scheduler_name is not None:
+        if scheduler_name.lower() == 'StepLR'.lower():
+            return torch.optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma), None, False
 
-    elif scheduler_name.lower() == 'ReduceLROnPlateau'.lower():
-        return torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=gamma, patience=patience), None, False
-    elif scheduler_name.lower() == 'OneCycleLR'.lower():
-        scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, lr, steps_per_epoch=train_loader_len,
-                                                        epochs=num_epochs)
-        return scheduler, scheduler, None
+        elif scheduler_name.lower() == 'ReduceLROnPlateau'.lower():
+            return torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=gamma, patience=patience), None, True
+        elif scheduler_name.lower() == 'OneCycleLR'.lower():
+            scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, lr, steps_per_epoch=train_loader_len,
+                                                            epochs=num_epochs)
+            return scheduler, scheduler, None
+        else:
+            raise ValueError('Scheduler is not correctly introduced')
     else:
         my_print('No scheduler', hparams['debug'])
         return None, None, None
@@ -128,6 +131,13 @@ def get_points(points, dense_batch, device):
         return points.pos.to(device)
 
 
+def forward(model, points, data, device, dense_batch):
+    if dense_batch:
+        return model(points)
+    else:
+        return model(points, data.edge_index.to(device), data.batch.to(device))
+
+
 # Train One Epoch:
 def train_epoch(model, train_loader, optimizer, criterion, accuracy, device, scheduler, dense_batch):
     # Model in train mode:
@@ -144,7 +154,7 @@ def train_epoch(model, train_loader, optimizer, criterion, accuracy, device, sch
         targets = data.y.to(device)
 
         # Forward pass:
-        preds, probs = model(points)
+        preds, probs = forward(model, points, data, device, dense_batch)
         # Loss calculation + Backpropagation pass
         optimizer.zero_grad()
         loss = criterion(preds.to(device), targets)
@@ -183,7 +193,7 @@ def valid_epoch(model, valid_loader, criterion, accuracy, device, dense_batch):
             targets = data.y.to(device)
 
             # Forward pass:
-            preds, probs = model(points)
+            preds, probs = forward(model, points, data, device, dense_batch)
             # Loss calculation
             loss = criterion(preds.to(device), targets)
             epoch_valid_loss.append(loss.item())
@@ -241,7 +251,7 @@ def fit(train_data, valid_data, num_classes, k=3, bs=32, num_epochs=100, lr=1e-3
 
     final_state_dict_root = model_root + '.pt'
     model.load_state_dict(torch.load(final_state_dict_root))
-    my_print("Best accuracy: " + best_accuracy, hparams['debug'])
+    my_print("Valid accuracy: " + str(best_accuracy), hparams['debug'])
     return best_accuracy, final_state_dict_root
 
 
@@ -262,14 +272,14 @@ def test(test_data, model_state_dict_root, dense_batch):
             targets = data.y.to(hparams['device'])
 
             # Forward pass:
-            preds, probs = model(points)
+            preds, probs = forward(model, points, data, hparams['device'], dense_batch)
 
             # Batch metrics calculation:
             accuracy.update(probs, targets)
 
     mean_accu = accuracy.compute().item()
     # Print of all metrics:
-    my_print("Acc.: " + str(mean_accu), hparams['debug'])
+    my_print("Test acc.: " + str(mean_accu), hparams['debug'])
     return mean_accu
 
 

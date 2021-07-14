@@ -4,3 +4,5 @@
 *.pyc
 data/
 tensorboard/
+src/test.py
+src/check parameters.py
