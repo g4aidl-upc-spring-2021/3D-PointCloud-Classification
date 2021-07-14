@@ -939,7 +939,7 @@ Now it’s time to use these models with test split and analyse the behaviour of
 
 Model | Test accuracy
 :-------------: | :-------------: 
-PointNet | 0.92401 
+PointNet | 0.9240 
 GCN | 0.8766
 
 Analysing the test accuracy we can conclude that the __PointNet architecture is better than GCN when performing the classification task of ModelNet__. 
