@@ -988,6 +988,7 @@ the redesign also for classification.
 This project has been focused on reproducing the PointNet classifier from scratch and then implementing a GCN network also for classification purposes, but it could be extended in some different ways:
 
 * Instead of ModelNet10, use ModelNet40 which contains meshes for 40 types of different objects or other datasets of point clouds such as [ShapeNet](https://shapenet.org/).
+* Equal number of elements of each class in the dataset in order to have a balance amount of objects.
 * Try different values for k in KNNGraph algorithm to generate graphs from point clouds.
 * Implement other metrics for evaluating the performance of the models, such as precision and recall, classification error or F1 score.
 * Try different transformations in data augmentation such as [Random Scale](https://pytorch-geometric.readthedocs.io/en/latest/modules/transforms.html#torch_geometric.transforms.RandomScale).
